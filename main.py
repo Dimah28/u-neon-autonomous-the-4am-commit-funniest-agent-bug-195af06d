@@ -42,16 +42,31 @@ ENTRY = (
 )
 
 
+MIN_LEN = 1
+MAX_LEN = 200
+
+
 def validate_commit_message(text):
-    """Gate: UTF-8 text of 1 to 200 characters, not only whitespace."""
+    """Gate: one printable line of UTF-8 text, 1 to 200 characters.
+
+    Stricter than the bare gate: a commit message must be a single
+    line with no control characters and no leading or trailing
+    whitespace, so a stray newline or padding can never slip into
+    the entry file.
+    """
     if not isinstance(text, str):
         raise ValueError("commit message must be text")
-    if not 1 <= len(text) <= 200:
+    if not MIN_LEN <= len(text) <= MAX_LEN:
         raise ValueError(
-            "commit message must be 1-200 characters, got %d" % len(text)
+            "commit message must be %d-%d characters, got %d"
+            % (MIN_LEN, MAX_LEN, len(text))
         )
     if not text.strip():
         raise ValueError("commit message must not be only whitespace")
+    if text != text.strip():
+        raise ValueError("commit message must not start or end with whitespace")
+    if any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in text):
+        raise ValueError("commit message must not contain control characters")
     text.encode("utf-8")  # raises if not encodable
     return text
 
